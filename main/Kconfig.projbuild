@@ -28,6 +28,8 @@ choice BOARD_TYPE
     default BOARD_TYPE_BREAD_COMPACT_WIFI
     help
         Board type. 开发板类型
+    config BOARD_TYPE_CRAB_SMARTBOX_V1
+        bool "CrabSmartBox V1"
     config BOARD_TYPE_BREAD_COMPACT_WIFI
         bool "面包板新版接线（WiFi）"
     config BOARD_TYPE_BREAD_COMPACT_WIFI_LCD
@@ -161,7 +163,7 @@ choice BOARD_TYPE
     config BOARD_TYPE_DOIT_S3_AIBOX
         bool "四博智联AI陪伴盒子"
     config BOARD_TYPE_MIXGO_NOVA
-        bool "元控·青春"
+        bool "元控·青春"    
     config BOARD_TYPE_GENJUTECH_S3_1_54TFT
         bool "亘具科技1.54(s3)"
     config BOARD_TYPE_ESP_S3_LCD_EV_Board
@@ -173,9 +175,9 @@ choice BOARD_TYPE
     config BOARD_TYPE_MINSI_K08_DUAL
         bool "敏思科技K08(DUAL)"
     config BOARD_TYPE_ESP32_S3_1_54_MUMA
-        bool "Spotpear ESP32-S3-1.54-MUMA"
+        bool "Spotpear ESP32-S3-1.54-MUMA"    
     config BOARD_TYPE_ESP32_S3_1_28_BOX
-        bool "Spotpear ESP32-S3-1.28-BOX"
+        bool "Spotpear ESP32-S3-1.28-BOX"    
 endchoice
 
 choice ESP_S3_LCD_EV_Board_Version_TYPE
