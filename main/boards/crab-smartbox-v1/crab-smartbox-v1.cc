@@ -293,10 +293,10 @@ public:
         InitializePowerSaveTimer();
         InitializeCodecI2c();
         // InitializeTca9554();  // Disabled - chip not supported
-        InitializeAxp2101();
+        // InitializeAxp2101();
         InitializeSpi();
         InitializeSt7789Display();
-        InitializeTouch();
+        // InitializeTouch();
         InitializeButtons();
         InitializeTools();
         ESP_LOGI(TAG, "CrabSmartBox V1 board initialization completed");
