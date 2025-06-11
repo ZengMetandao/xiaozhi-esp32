@@ -26,8 +26,8 @@
 
 #define TAG "CrabSmartBoxV1"
 
-LV_FONT_DECLARE(font_puhui_30_4);
-LV_FONT_DECLARE(font_awesome_30_4);
+LV_FONT_DECLARE(font_puhui_20_4);
+LV_FONT_DECLARE(font_awesome_20_4);
 
 class Pmic : public Axp2101 {
 public:
@@ -77,8 +77,8 @@ public:
         : SpiLcdDisplay(io_handle, panel_handle,
                        width, height, offset_x, offset_y, mirror_x, mirror_y, swap_xy,
                        {
-                           .text_font = &font_puhui_30_4,
-                           .icon_font = &font_awesome_30_4,
+                           .text_font = &font_puhui_20_4,
+                           .icon_font = &font_awesome_20_4,
 #if CONFIG_USE_WECHAT_MESSAGE_STYLE
                            .emoji_font = font_emoji_32_init(),
 #else
@@ -115,7 +115,7 @@ private:
     i2c_master_bus_handle_t codec_i2c_bus_;
     Pmic* pmic_ = nullptr;
     Button boot_button_;
-    CrabSmartBoxDisplay* display_;
+    SpiLcdDisplay* display_;
     CrabSmartBoxBacklight* backlight_;
     esp_io_expander_handle_t io_expander = NULL;
     PowerSaveTimer* power_save_timer_;
@@ -186,9 +186,9 @@ private:
 
     void InitializeSpi() {
         spi_bus_config_t buscfg = {};
-        buscfg.mosi_io_num = EXAMPLE_PIN_NUM_LCD_MOSI;
+        buscfg.mosi_io_num = LCD_MOSI;
         buscfg.miso_io_num = GPIO_NUM_NC;
-        buscfg.sclk_io_num = EXAMPLE_PIN_NUM_LCD_SCLK;
+        buscfg.sclk_io_num = LCD_SCLK;
         buscfg.quadwp_io_num = GPIO_NUM_NC;
         buscfg.quadhd_io_num = GPIO_NUM_NC;
         buscfg.max_transfer_sz = DISPLAY_WIDTH * DISPLAY_HEIGHT * sizeof(uint16_t);
@@ -208,40 +208,45 @@ private:
     void InitializeSt7789Display() {
         esp_lcd_panel_io_handle_t panel_io = nullptr;
         esp_lcd_panel_handle_t panel = nullptr;
-
-        // 液晶屏控制IO初始化
         ESP_LOGD(TAG, "Install panel IO");
+        // 液晶屏控制IO初始化
         esp_lcd_panel_io_spi_config_t io_config = {};
-        io_config.cs_gpio_num = EXAMPLE_PIN_NUM_LCD_CS;
-        io_config.dc_gpio_num = EXAMPLE_PIN_NUM_LCD_DC;
-        io_config.spi_mode = 0;
+        io_config.cs_gpio_num = LCD_CS_PIN;
+        io_config.dc_gpio_num = LCD_DC_PIN;
+        io_config.spi_mode = 3;
         io_config.pclk_hz = 20 * 1000 * 1000;
-        io_config.trans_queue_depth = 10;
+        io_config.trans_queue_depth = 7;
         io_config.lcd_cmd_bits = 8;
         io_config.lcd_param_bits = 8;
-        ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi(SPI2_HOST, &io_config, &panel_io));
+        esp_lcd_new_panel_io_spi(SPI2_HOST, &io_config, &panel_io);
 
         // 初始化液晶屏驱动芯片ST7789
         ESP_LOGD(TAG, "Install LCD driver");
         esp_lcd_panel_dev_config_t panel_config = {};
-        panel_config.reset_gpio_num = EXAMPLE_PIN_NUM_LCD_RST;
+        panel_config.reset_gpio_num = LCD_RST;
         panel_config.rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB;
         panel_config.bits_per_pixel = 16;
-        ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(panel_io, &panel_config, &panel));
-
-        ESP_ERROR_CHECK(esp_lcd_panel_reset(panel));
-        ESP_ERROR_CHECK(esp_lcd_panel_init(panel));
-        ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panel, DISPLAY_SWAP_XY));
-        ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y));
-        ESP_ERROR_CHECK(esp_lcd_panel_invert_color(panel, true));
-        ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel, true));
+        panel_config.data_endian = LCD_RGB_DATA_ENDIAN_BIG,
+        esp_lcd_new_panel_st7789(panel_io, &panel_config, &panel);
         
-        display_ = new CrabSmartBoxDisplay(panel_io, panel,
-                                          DISPLAY_WIDTH, DISPLAY_HEIGHT, 
-                                          DISPLAY_OFFSET_X, DISPLAY_OFFSET_Y, 
-                                          DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y, DISPLAY_SWAP_XY);
-        backlight_ = new CrabSmartBoxBacklight(panel_io);
-        backlight_->RestoreBrightness();
+        esp_lcd_panel_reset(panel);
+        
+
+        esp_lcd_panel_init(panel);
+        esp_lcd_panel_invert_color(panel, DISPLAY_BACKLIGHT_OUTPUT_INVERT);
+        esp_lcd_panel_swap_xy(panel, DISPLAY_SWAP_XY); 
+        esp_lcd_panel_mirror(panel, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y);
+        display_ = new SpiLcdDisplay(panel_io, panel,
+                                    DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_OFFSET_X, DISPLAY_OFFSET_Y, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y, DISPLAY_SWAP_XY,
+                                    {
+                                        .text_font = &font_puhui_20_4,
+                                        .icon_font = &font_awesome_20_4,
+                                        #if CONFIG_USE_WECHAT_MESSAGE_STYLE
+                                            .emoji_font = font_emoji_32_init(),
+                                        #else
+                                            .emoji_font = DISPLAY_HEIGHT >= 240 ? font_emoji_64_init() : font_emoji_32_init(),
+                                        #endif
+                                    });
     }
 
     void InitializeTouch() {
@@ -318,15 +323,20 @@ public:
     }
 
     virtual bool GetBatteryLevel(int &level, bool& charging, bool& discharging) override {
-        static bool last_discharging = false;
-        charging = pmic_->IsCharging();
-        discharging = pmic_->IsDischarging();
-        if (discharging != last_discharging) {
-            power_save_timer_->SetEnabled(discharging);
-            last_discharging = discharging;
-        }
 
-        level = pmic_->GetBatteryLevel();
+        level = 100; // Default to 100% for CrabSmartBox V1
+        charging = false; // Default to not charging
+        discharging = false; // Default to not discharging
+
+        // static bool last_discharging = false;
+        // charging = pmic_->IsCharging();
+        // discharging = pmic_->IsDischarging();
+        // if (discharging != last_discharging) {
+        //     power_save_timer_->SetEnabled(discharging);
+        //     last_discharging = discharging;
+        // }
+
+        // level = pmic_->GetBatteryLevel();
         return true;
     }
 

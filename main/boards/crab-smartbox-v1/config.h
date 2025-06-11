@@ -21,11 +21,11 @@
 #define BOOT_BUTTON_GPIO GPIO_NUM_0
 
 // LCD display configuration for ST7789 SPI
-#define EXAMPLE_PIN_NUM_LCD_CS GPIO_NUM_NC      // SPI CS pin
-#define EXAMPLE_PIN_NUM_LCD_DC GPIO_NUM_9       // DC/Command pin 
-#define EXAMPLE_PIN_NUM_LCD_RST GPIO_NUM_48      // Reset pin
-#define EXAMPLE_PIN_NUM_LCD_MOSI GPIO_NUM_13     // SPI MOSI pin
-#define EXAMPLE_PIN_NUM_LCD_SCLK GPIO_NUM_14    // SPI Clock pin
+#define LCD_CS_PIN GPIO_NUM_NC      // SPI CS pin
+#define LCD_DC_PIN GPIO_NUM_9       // DC/Command pin 
+#define LCD_RST GPIO_NUM_48      // Reset pin
+#define LCD_MOSI GPIO_NUM_13     // SPI MOSI pin
+#define LCD_SCLK GPIO_NUM_14    // SPI Clock pin
 
 // Display dimensions and settings for CrabSmartBox v1
 #define DISPLAY_WIDTH 240
